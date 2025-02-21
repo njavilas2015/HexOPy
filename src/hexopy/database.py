@@ -12,52 +12,52 @@ class DatabaseManager:
         self.INSTALLED_APPS = INSTALLED_APPS
 
     def load_models(self):
-        """Carga dinámicamente los modelos desde las aplicaciones instaladas."""
+        """Dynamically load models from installed applications."""
         for app in self.INSTALLED_APPS:
             model_path: str = f"pkg.{app}.infrastructure.persistence.models"
 
             try:
                 module: ModuleType = importlib.import_module(model_path)
-                print(f"📦 Módulo base encontrado: {model_path}")
+                print(f"📦 Base module found: {model_path}")
 
                 if hasattr(module, "__path__"):
                     for _, module_name, _ in pkgutil.iter_modules(module.__path__):
                         full_module_name = f"{model_path}.{module_name}"
                         self.model_modules.append(full_module_name)
-                        print(f"✅ Modelo cargado: {full_module_name}")
+                        print(f"✅ Loaded model: {full_module_name}")
 
             except ModuleNotFoundError as e:
-                print(f"⚠️ Warning: No se pudo importar {model_path}: {e}")
+                print(f"⚠️ Warning: Could not import {model_path}: {e}")
 
     async def init_db(self):
-        """Inicializa la base de datos con los modelos cargados."""
+        """Initializes the database with the loaded models."""
         self.load_models()
 
         if not self.model_modules:
-            print("❌ No se encontraron modelos. Verifica `INSTALLED_APPS`.")
+            print("❌ No models found. Check Check `INSTALLED_APPS`.")
             return
 
-        print("🔄 Inicializando Tortoise con modelos:", self.model_modules)
+        print("🔄 Initializing Tortoise with models:", self.model_modules)
 
         await Tortoise.init(
             db_url=self.database_url, modules={"models": self.model_modules}
         )
-        print("✅ Base de datos conectada. Generando esquemas...")
+        print("✅ Connected database. Generating schematics...")
 
         await Tortoise.generate_schemas()
-        print("🎉 Esquemas generados exitosamente.")
+        print("🎉 Schemes generated successfully.")
 
     async def close_db(self):
-        """Cierra la conexión con la base de datos."""
+        """Close the connection to the database."""
 
-        print("🛑 Cerrando conexión con la base de datos...")
+        print("🛑 Closing connection with the database...")
 
         await Tortoise.close_connections()
 
-        print("✅ Conexión cerrada.")
+        print("✅ Closed connection.")
 
     async def run(self):
-        """Ejecuta la inicialización y cierre de la base de datos."""
+        """Run database initialization and shutdown"""
 
         await self.init_db()
         await self.close_db()

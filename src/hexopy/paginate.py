@@ -1,6 +1,6 @@
 from typing import Callable, Generic, List
 from dataclasses import dataclass
-from .types import T, U
+from hexopy.types import T, U
 
 
 @dataclass(frozen=True, slots=True)

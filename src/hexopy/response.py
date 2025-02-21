@@ -1,7 +1,7 @@
 from typing import Generic
 from dataclasses import asdict, is_dataclass
 from fastapi.responses import JSONResponse
-from .types import T
+from hexopy.types import T
 
 
 class ResponseNotFoundError(JSONResponse):
