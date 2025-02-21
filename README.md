@@ -14,6 +14,8 @@ HexOPy es un **boilerplate ligero y escalable** para desarrollar aplicaciones en
 git clone https://github.com/tu-usuario/hexopy.git  
 cd hexopy  
 pip install -r requirements.txt  
+
+pip install --index-url https://test.pypi.org/simple/ hexopy
 ```
 
 ## 📖 Documentación  

@@ -1,0 +1,30 @@
+{
+	"name": "HexOPy",
+	"dockerFile": "Dockerfile",
+	"context": "..",
+	"runArgs": [
+		"--network",
+		"host",
+		"--env-file",
+		".env"
+	],
+	"postCreateCommand": "echo 'Welcome!! Ya puedes trabajar'",
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"terminal.integrated.shell.linux": "/bin/bash",
+				"python.defaultInterpreterPath": "/workspaces/venv/bin/python",
+				"git.enabled": true,
+				"git.autofetch": true,
+				"git.confirmSync": false
+			},
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"ms-python.black-formatter",
+				"streetsidesoftware.code-spell-checker"
+			]
+		}
+	},
+	"remoteUser": "vscode"
+}

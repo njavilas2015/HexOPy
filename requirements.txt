@@ -1,0 +1,13 @@
+pydantic==2.10.6
+pytest==8.3.4 
+asyncpg==0.30.0
+aerich
+tortoise-orm
+aiosqlite
+fastapi
+
+black==25.1.0
+colorama==0.4.6
+
+build==1.2.2
+twine==6.1.0
