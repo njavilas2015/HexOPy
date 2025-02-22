@@ -16,9 +16,9 @@ class Manager:
 
         self.subparsers = self.parser.add_subparsers(dest="command", metavar="command")
 
-        self.load_commands()
-
         self.INSTALLED_APPS = INSTALLED_APPS
+
+        self.load_commands()
 
     def load_commands(self):
         """Dynamically load commands from installed apps."""
