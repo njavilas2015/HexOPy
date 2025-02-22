@@ -1,6 +1,6 @@
 from .command import BaseCommand, register_command
 from .database import DatabaseManager
-from .paginate import Paginate, createPaginateResponse
+from .paginate import Paginate, createPaginateResponse, PaginateDTO
 from .printer import ConsoleStyle
 from .response import (
     Response,
@@ -14,6 +14,7 @@ __all__ = [
     "register_command",
     "DatabaseManager",
     "Paginate",
+    "PaginateDTO",
     "createPaginateResponse",
     "ConsoleStyle",
     "Response",

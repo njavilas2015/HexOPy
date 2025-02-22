@@ -1,7 +1,24 @@
 from typing import Callable, Generic, List
-from dataclasses import dataclass
+from pydantic import field_validator
+from pydantic.dataclasses import dataclass
 from hexopy.types import T, U
 
+@dataclass(frozen=True, slots=True)
+class PaginateDTO:
+    page: int
+    limit: int
+
+    @field_validator("page")
+    def validate_page(cls, v: int):
+        if v <= 0:
+            raise ValueError("Page must be a positive integer")
+        return v
+
+    @field_validator("limit")
+    def validate_limit(cls, v: int):
+        if v <= 0:
+            raise ValueError("Limit must be a positive integer")
+        return v
 
 @dataclass(frozen=True, slots=True)
 class Paginate(Generic[T]):
