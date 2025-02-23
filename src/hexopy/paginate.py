@@ -28,6 +28,9 @@ class Paginate(Generic[T]):
     total_page: int
     data: T
 
+    @staticmethod
+    def calculate_total_pages(total: int, limit: int) -> int:
+        return (total // limit) + (1 if total % limit > 0 else 0)
 
 def createPaginateResponse(
     paginate: Paginate[T], transformFunc: Callable[[List[T]], List[U]]
