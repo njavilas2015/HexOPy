@@ -35,9 +35,6 @@ async def run_server():
             workers=module.server.workers
         )
 
-        await module.server.check_db_connection()
-
-
     else:
         print("❌ `internal/main.py` no contiene una instancia `server`.")
 
