@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hexopy"
-version = "0.2.0"
+version = "0.2.1"
 description = "HexOPy 🛠️🐍 – Hexagonal Architecture for Python"
 readme = "README.md"
 authors = [{ name = "Javier Avila njavilas", email = "njavilas2015@gmail.com" }]
