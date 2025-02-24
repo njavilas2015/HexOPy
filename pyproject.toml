@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hexopy"
-version = "0.1.4"
+version = "0.2.0"
 description = "HexOPy 🛠️🐍 – Hexagonal Architecture for Python"
 readme = "README.md"
 authors = [{ name = "Javier Avila njavilas", email = "njavilas2015@gmail.com" }]
@@ -16,9 +16,11 @@ classifiers = [
 ]
 
 dependencies = [
+    "colorama==0.4.6",
     "pydantic==2.10.6",
     "pytest==8.3.4",
     "asyncpg==0.30.0",
+    "uvicorn==0.34.0",
     "aerich",
     "tortoise-orm",
     "aiosqlite",
@@ -27,6 +29,9 @@ dependencies = [
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+
+[project.scripts]
+hexopy = "hexopy.cli:main"
 
 [project.urls]
 "Homepage" = "https://github.com/njavilas2015/HexOPy"

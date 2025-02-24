@@ -2,6 +2,7 @@ from .command import BaseCommand, register_command
 from .database import DatabaseManager
 from .paginate import Paginate, createPaginateResponse, PaginateDTO
 from .printer import ConsoleStyle
+from .server import HexoServer
 from .response import (
     Response,
     ResponseNotFoundError,
@@ -21,4 +22,5 @@ __all__ = [
     "ResponseNotFoundError",
     "ResponseValidationError",
     "ResponseValueError",
+    "HexoServer"
 ]
