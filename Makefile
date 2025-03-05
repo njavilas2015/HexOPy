@@ -15,6 +15,7 @@ build:
 
 publish:
 	twine upload dist/*
+	rm -fr dist
 
 publish-test:
 	twine upload --repository testpypi dist/*

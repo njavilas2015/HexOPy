@@ -1,12 +1,12 @@
 {
-	"name": "HexOPy",
+	"name": "Onbbu Python",
 	"dockerFile": "Dockerfile",
 	"context": "..",
 	"runArgs": [
 		"--network",
 		"host",
 		"--env-file",
-		".env"
+		".devcontainer/.env"
 	],
 	"postCreateCommand": "echo 'Welcome!! Ya puedes trabajar'",
 	"customizations": {

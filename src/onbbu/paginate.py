@@ -1,7 +1,10 @@
 from typing import Callable, Generic, List
+
 from pydantic import field_validator
 from pydantic.dataclasses import dataclass
-from hexopy.types import T, U
+
+from onbbu.types import T, U
+
 
 @dataclass(frozen=True, slots=True)
 class PaginateDTO:
@@ -20,6 +23,7 @@ class PaginateDTO:
             raise ValueError("Limit must be a positive integer")
         return v
 
+
 @dataclass(frozen=True, slots=True)
 class Paginate(Generic[T]):
     page: int
@@ -31,6 +35,7 @@ class Paginate(Generic[T]):
     @staticmethod
     def calculate_total_pages(total: int, limit: int) -> int:
         return (total // limit) + (1 if total % limit > 0 else 0)
+
 
 def createPaginateResponse(
     paginate: Paginate[T], transformFunc: Callable[[List[T]], List[U]]

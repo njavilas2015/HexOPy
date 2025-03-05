@@ -4,11 +4,10 @@ asyncpg==0.30.0
 aerich
 tortoise-orm
 aiosqlite
-fastapi
-
+starlette==0.46.0
+uvicorn==0.34.0
 black==25.1.0
 colorama==0.4.6
 
 build==1.2.2
 twine==6.1.0
-uvicorn==0.34.0

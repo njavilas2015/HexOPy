@@ -3,9 +3,9 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hexopy"
-version = "0.2.1"
-description = "HexOPy 🛠️🐍 – Hexagonal Architecture for Python"
+name = "onbbu"
+version = "0.0.35"
+description = "Onbbu 🛠️🐍 – Hexagonal Architecture for Python"
 readme = "README.md"
 authors = [{ name = "Javier Avila njavilas", email = "njavilas2015@gmail.com" }]
 license = { file = "LICENSE" }
@@ -16,23 +16,24 @@ classifiers = [
 ]
 
 dependencies = [
-    "colorama==0.4.6",
+    "starlette>=0.46.0",    
+    "requests==2.32.3",
     "pydantic==2.10.6",
     "pytest==8.3.4",
     "asyncpg==0.30.0",
     "uvicorn==0.34.0",
-    "aerich",
-    "tortoise-orm",
+    "aerich==0.8.2",
+    "tortoise-orm==0.24.1",
+    "rich==13.9.4",
     "aiosqlite",
-    "fastapi"
 ]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
 
 [project.scripts]
-hexopy = "hexopy.cli:main"
+onbbu = "onbbu:cli"
 
 [project.urls]
-"Homepage" = "https://github.com/njavilas2015/HexOPy"
-"Bug Tracker" = "https://github.com/njavilas2015/HexOPy/issues"
+"Homepage" = "https://github.com/njavilas2015/onbbu"
+"Bug Tracker" = "https://github.com/njavilas2015/onbbu/issues"
