@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "onbbu"
-version = "0.0.35"
+version = "0.0.36"
 description = "Onbbu 🛠️🐍 – Hexagonal Architecture for Python"
 readme = "README.md"
 authors = [{ name = "Javier Avila njavilas", email = "njavilas2015@gmail.com" }]
@@ -17,14 +17,14 @@ classifiers = [
 
 dependencies = [
     "starlette>=0.46.0",    
-    "requests==2.32.3",
-    "pydantic==2.10.6",
-    "pytest==8.3.4",
-    "asyncpg==0.30.0",
-    "uvicorn==0.34.0",
-    "aerich==0.8.2",
-    "tortoise-orm==0.24.1",
-    "rich==13.9.4",
+    "requests>=2.32.3",
+    "pydantic>=2.10.6",
+    "pytest>=8.3.4",
+    "asyncpg>=0.30.0",
+    "uvicorn>=0.34.0",
+    "aerich>=0.8.2",
+    "tortoise-orm>=0.24.1",
+    "rich>=13.9.4",
     "aiosqlite",
 ]
 
