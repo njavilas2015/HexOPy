@@ -30,7 +30,7 @@ class Paginate(Generic[T]):
     limit: int
     total: int
     total_page: int
-    data: T
+    data: List[T]
 
     @staticmethod
     def calculate_total_pages(total: int, limit: int) -> int:
@@ -38,13 +38,13 @@ class Paginate(Generic[T]):
 
 
 def createPaginateResponse(
-    paginate: Paginate[T], transformFunc: Callable[[List[T]], List[U]]
-):
+    paginate: Paginate[T], transform: Callable[[List[T]], List[U]]
+) -> Paginate[U]:
 
     return Paginate(
         page=paginate.page,
         limit=paginate.limit,
         total=paginate.total,
         total_page=paginate.total_page,
-        data=transformFunc(paginate.data),
+        data=transform(paginate.data),
     )

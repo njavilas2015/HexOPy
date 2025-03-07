@@ -17,11 +17,12 @@ RUN curl -s https://api.github.com/repos/njavilas2015/githooks/releases/latest |
     xargs wget && \
     chmod +x githooks
 
-COPY . /workspaces
+COPY requirements.txt /tmp/requirements.txt
+
 
 RUN python3 -m venv /workspaces/venv && \
     /workspaces/venv/bin/pip install --upgrade pip && \
-    /workspaces/venv/bin/pip install --no-cache-dir -r requirements.txt
+    /workspaces/venv/bin/pip install --no-cache-dir -r /tmp/requirements.txt
 
 
 EXPOSE 8000

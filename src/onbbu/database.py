@@ -1,13 +1,14 @@
 import importlib
 import pkgutil
 from types import ModuleType
+from typing import Any
 
 from tortoise import Tortoise
 from onbbu.logger import LogLevel, logger
-from aerich import Command
+from aerich import Command # type: ignore
 
 class DatabaseManager:
-    def __init__(self, database_url, INSTALLED_APPS: list[str]):
+    def __init__(self, database_url: str, INSTALLED_APPS: list[str]):
         self.database_url = database_url
         self.model_modules: list[str] = []
         self.INSTALLED_APPS = INSTALLED_APPS
@@ -19,40 +20,34 @@ class DatabaseManager:
 
             try:
                 module: ModuleType = importlib.import_module(model_path)
-                logger.log(LogLevel.INFO, f"📦 Base module found: {model_path}")
+
+                logger.log(
+                    level=LogLevel.INFO,
+                    message=f"📦 Base module found: {model_path}",
+                    extra_data={},
+                )
 
                 if hasattr(module, "__path__"):
                     for _, module_name, _ in pkgutil.iter_modules(module.__path__):
                         full_module_name = f"{model_path}.{module_name}"
                         self.model_modules.append(full_module_name)
+
                         logger.log(
-                            LogLevel.INFO, f"✅ Loaded model: {full_module_name}"
+                            level=LogLevel.INFO,
+                            message=f"✅ Loaded model: {full_module_name}",
+                            extra_data={},
                         )
 
             except ModuleNotFoundError as e:
                 logger.log(
-                    LogLevel.WARNING, f"⚠️ Warning: Could not import {model_path}: {e}"
+                    level=LogLevel.INFO,
+                    message=f"⚠️ Warning: Could not import {model_path}: {e}",
+                    extra_data={},
                 )
 
-    async def init(self) -> None:
-        """Initialize the database and apply the migrations."""
+    def get_config(self):
 
-        await self.load_models()
-
-        if not self.model_modules:
-            logger.log(
-                level=LogLevel.ERROR,
-                message="❌ No models found. Check Check `INSTALLED_APPS`.",
-            )
-
-            return
-
-        logger.log(
-            level=LogLevel.INFO,
-            message=f"🔄 Initializing Tortoise with models: {self.model_modules}",
-        )
-
-        tortoise_config = {
+        tortoise_config: dict[str, Any] = {
             "connections": {
                 "default": self.database_url,
             },
@@ -64,15 +59,45 @@ class DatabaseManager:
             },
         }
 
-        await Tortoise.init(config=tortoise_config)
+        return tortoise_config
 
-        self.command = Command(tortoise_config=tortoise_config)
+    async def init(self) -> None:
+        """Initialize the database and apply the migrations."""
 
-        logger.log(LogLevel.INFO, "✅ Connected database. Generating schematics...")
+        await self.load_models()
 
-        await Tortoise.generate_schemas()
+        if not self.model_modules:
+            logger.log(
+                level=LogLevel.ERROR,
+                message="❌ No models found. Check Check `INSTALLED_APPS`.",
+                extra_data={},
+            )
 
-        logger.log(LogLevel.INFO, "🎉 Schemes generated successfully.")
+            return
+
+        logger.log(
+            level=LogLevel.INFO,
+            message=f"🔄 Initializing Tortoise with models: {self.model_modules}",
+            extra_data={},
+        )
+
+        await Tortoise.init(config=self.get_config())
+
+        self.command = Command(tortoise_config=self.get_config())
+
+        logger.log(
+            level=LogLevel.INFO,
+            message="✅ Connected database. Generating schematics...",
+            extra_data={},
+        )
+
+        await Tortoise.generate_schemas(safe=True)
+
+        logger.log(
+            level=LogLevel.INFO,
+            message="🎉 Schemes generated successfully.",
+            extra_data={},
+        )
 
         await Tortoise.close_connections()
 
@@ -90,12 +115,12 @@ class DatabaseManager:
 
         await self.command.upgrade()
 
-    async def downgrade(self, steps=1) -> None:
+    async def downgrade(self, steps: int = 1) -> None:
         """Revert migrations (default: 1 step)."""
 
         await self.command.init()
 
-        await self.command.downgrade(steps)
+        await self.command.downgrade(steps, delete=False)
 
     async def history(self) -> None:
         """Show the history of applied migrations."""
@@ -107,7 +132,11 @@ class DatabaseManager:
     async def create_database(self) -> None:
         """Create the database if it does not exist."""
 
-        logger.log(LogLevel.INFO, f"🛠️ Creating database...")
+        logger.log(
+            level=LogLevel.INFO,
+            message=f"🛠️ Creating database...",
+            extra_data={},
+        )
 
         await Tortoise.init(
             db_url=self.database_url, modules={"models": self.model_modules}
@@ -120,20 +149,26 @@ class DatabaseManager:
     async def drop_database(self) -> None:
         """Delete all tables from the database."""
 
-        logger.log(LogLevel.INFO, "🗑️ Dropping database...")
-
-        await Tortoise.init(
-            db_url=self.database_url, modules={"models": self.model_modules}
+        logger.log(
+            level=LogLevel.INFO,
+            message="🗑️ Dropping database...",
+            extra_data={},
         )
 
-        await Tortoise._drop_databases()
+        await Tortoise.init(config=self.get_config())
+
+        await Tortoise.generate_schemas(safe=False)
 
         await Tortoise.close_connections()
 
     async def reset_database(self) -> None:
         """Delete and recreate the database."""
 
-        logger.log(LogLevel.INFO, "🔄 Resetting database...")
+        logger.log(
+            level=LogLevel.INFO,
+            message=f"🔄 Resetting database...",
+            extra_data={},
+        )
 
         await self.drop_database()
 
@@ -146,12 +181,20 @@ class DatabaseManager:
 
         applied = await self.command.history()
 
-        logger.log(LogLevel.INFO, f"📜 Applied migrations:\n{applied}")
+        logger.log(
+            level=LogLevel.INFO,
+            message=f"📜 Applied migrations:\n{applied}",
+            extra_data={},
+        )
 
     async def apply_all_migrations(self) -> None:
         """Generate and apply all migrations in a single step."""
 
-        logger.log(LogLevel.INFO, "🚀 Applying all migrations...")
+        logger.log(
+            level=LogLevel.INFO,
+            message=f"🚀 Applying all migrations...",
+            extra_data={},
+        )
 
         await self.migrate()
 
@@ -160,30 +203,55 @@ class DatabaseManager:
     async def rollback_all_migrations(self) -> None:
         """Revert all migrations to the initial state."""
 
-        logger.log(LogLevel.INFO, "⏪ Rolling back all migrations...")
+        logger.log(
+            level=LogLevel.INFO,
+            message=f"⏪ Rolling back all migrations...",
+            extra_data={},
+        )
 
         await self.command.init()
 
         while True:
             try:
-                await self.command.downgrade(1)
+
+                await self.command.downgrade(1, delete=False)
+
             except Exception:
-                logger.log(LogLevel.INFO, "✅ No more migrations to revert.")
+
+                logger.log(
+                    level=LogLevel.INFO,
+                    message=f"✅ No more migrations to revert.",
+                    extra_data={},
+                )
+
                 break
 
     async def seed_data(self) -> None:
         """Insert initial data into the database."""
 
-        logger.log(LogLevel.INFO, "🌱 Seeding initial data...")
-
-        await Tortoise.init(
-            db_url=self.database_url, modules={"models": self.model_modules}
+        logger.log(
+            level=LogLevel.INFO,
+            message=f"🌱 Seeding initial data...",
+            extra_data={},
         )
+
+        await Tortoise.init(config=self.get_config())
 
         await Tortoise.close_connections()
 
     async def close(self) -> None:
         """Close the database connections."""
-        logger.log(LogLevel.INFO, "🔌 Closing database connections...")
+
+        logger.log(
+            level=LogLevel.INFO,
+            message=f"🔌 Closing database connections...",
+            extra_data={},
+        )
+
         await Tortoise.close_connections()
-        logger.log(LogLevel.INFO, "✅ Database connections closed.")
+
+        logger.log(
+            level=LogLevel.INFO,
+            message=f"✅ Database connections closed..",
+            extra_data={},
+        )

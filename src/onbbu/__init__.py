@@ -1,22 +1,16 @@
-import argparse
+from argparse import ArgumentParser, Namespace
 import sys
-import importlib
 import os
-import importlib.util
-import multiprocessing
 
 from typing import List
-from dataclasses import dataclass
-from contextlib import asynccontextmanager
-
-from starlette.applications import Starlette
-
 import uvicorn
 
 from onbbu.logger import LogLevel, logger
 from onbbu.database import DatabaseManager
+from onbbu.manager import BaseCommand, Manager, create_module, COMMANDS, register_command
+from onbbu.config_loader import ConfigLoader
+from onbbu.paginate import PaginateDTO, createPaginateResponse, Paginate
 from onbbu.http import (
-    RouterHttp,
     HTTPMethod,
     EndpointHttpType,
     Response,
@@ -25,9 +19,8 @@ from onbbu.http import (
     ResponseValidationError,
     Request,
     JSONResponse,
+    ServerHttp,
 )
-
-from onbbu.manager import BaseCommand, Manager, create_module
 
 BASE_DIR: str = os.getcwd()
 
@@ -35,45 +28,12 @@ sys.path.append(BASE_DIR)
 
 environment: str = os.getenv("ENVIRONMENT", "development")
 
-
-class ConfigLoader:
-    def __init__(self, base_dir):
-        self.base_dir = base_dir
-
-    def load_python_config(self, relative_path, attribute_name, default=None):
-        """Upload a configuration file in Python format"""
-
-        config_path = os.path.join(self.base_dir, *relative_path.split("/"))
-
-        if not os.path.exists(config_path):
-            print(
-                f"⚠️ Advertencia: No se encontró `{relative_path}`. Se usará el valor por defecto."
-            )
-            return default
-
-        spec = importlib.util.spec_from_file_location("config_module", config_path)
-
-        config_module = importlib.util.module_from_spec(spec)
-
-        spec.loader.exec_module(config_module)
-
-        return getattr(config_module, attribute_name, default)
-
-
 installed_apps: List[str] = ConfigLoader(BASE_DIR).load_python_config(
-    relative_path="internal/settings.py",
-    attribute_name="INSTALLED_APPS",
+    path="internal/settings.py",
+    attribute="INSTALLED_APPS",
     default=[],
 )
 
-
-COMMANDS = {}
-
-
-def register_command(cls: BaseCommand) -> BaseCommand:
-    """Decorator to register commands automatically."""
-    COMMANDS[cls.name.lower()] = cls()
-    return cls
 
 
 database = DatabaseManager(
@@ -82,43 +42,14 @@ database = DatabaseManager(
 )
 
 
-class ServerHttp:
-    def __init__(self, port=8000):
-        self.host = "0.0.0.0"
-        self.port = port
-        self.environment = environment
-        self.reload = self.environment == "development"
-        self.workers = 1 if self.reload else max(2, multiprocessing.cpu_count() - 1)
-
-        self.server = Starlette(debug=True, routes=[], lifespan=self._lifespan)
-
-        self.config = ConfigInit(http=self)
-
-    @asynccontextmanager
-    async def _lifespan(self, app: Starlette):
-        """Gestor de eventos de vida para FastAPI"""
-        await database.init()
-        yield
-        await database.close()
-
-    def include_router(self, router: RouterHttp):
-        """Agrega todas las rutas de un RouterHttp a la aplicación"""
-        self.server.router.routes.extend(router.get_router())
-
-
-def create_app(port=8000) -> ServerHttp:
+def create_app(port: int = 8000) -> ServerHttp:
     """Crea y retorna una instancia del servidor."""
-    return ServerHttp(port=port)
-
-
-@dataclass(frozen=True, slots=True)
-class ConfigInit:
-    http: ServerHttp
+    return ServerHttp(port=port, database=database, environment=environment)
 
 
 server: ServerHttp = ConfigLoader(BASE_DIR).load_python_config(
-    relative_path="internal/main.py",
-    attribute_name="server",
+    path="internal/main.py",
+    attribute="server",
     default=None,
 )
 
@@ -138,7 +69,7 @@ class CommandMigrate(BaseCommand):
     #        "--port", type=int, default=8000, help="Port for the server"
     #    )
 
-    async def handle(self, args):
+    async def handle(self, args: Namespace):
 
         await database.init()
 
@@ -154,12 +85,12 @@ class CommandCreateModule(BaseCommand):
     name: str = "create_module"
     help: str = "Comando para crear un nuevo modulo."
 
-    def add_arguments(self, parser):
+    async def add_arguments(self, parser: ArgumentParser):
         parser.add_argument(
             "--name", type=str, default="demo", help="Nombre del moodulo"
         )
 
-    def handle(self, args):
+    async def handle(self, args: Namespace):
         create_module(path=BASE_DIR, name=args.name)
 
 
@@ -178,18 +109,20 @@ class CommandRunServer(BaseCommand):
     #        "--port", type=int, default=8000, help="Port for the server"
     #    )
 
-    def handle(self, args):
+    async def handle(self, args: Namespace):
 
         if hasattr(server, "server"):
             logger.log(
                 level=LogLevel.INFO,
                 message=f"🚀 Iniciando servidor en {server.host}:{server.port} ...",
+                extra_data={},
             )
 
             for route in server.server.routes:
                 logger.log(
                     level=LogLevel.INFO,
                     message=f"🔗 {route.path} -> {route.name} ({route.methods})",
+                    extra_data={},
                 )
 
             uvicorn.run(
@@ -204,11 +137,13 @@ class CommandRunServer(BaseCommand):
             logger.log(
                 level=LogLevel.ERROR,
                 message=f"❌ `internal/main.py` no contiene una instancia `server`.",
+                extra_data={},
             )
 
 
-def cli():
-    manager = Manager(INSTALLED_APPS=installed_apps, COMMANDS=COMMANDS)
+async def cli():
+
+    manager: Manager = Manager(INSTALLED_APPS=installed_apps, COMMANDS=COMMANDS)
 
     commands: list[BaseCommand] = [
         CommandRunServer(),
@@ -216,14 +151,16 @@ def cli():
         CommandCreateModule(),
     ]
 
-    manager.internal_command(commands)
+    await manager.load_commands()
 
-    manager.execute()
+    await manager.internal_command(commands)
+
+    await manager.execute()
 
 
 def main():
 
-    parser = argparse.ArgumentParser(description="CLI para manejar Onbbu")
+    parser: ArgumentParser = ArgumentParser(description="CLI para manejar Onbbu")
 
     subparsers = parser.add_subparsers(dest="command")
 
@@ -235,7 +172,7 @@ def main():
 
     subparsers.add_parser("routes", help="Listar rutas de")
 
-    args = parser.parse_args()
+    args: Namespace = parser.parse_args()
 
     parser.print_help()
 
@@ -257,12 +194,10 @@ __all__ = [
     "Paginate",
     "PaginateDTO",
     "createPaginateResponse",
-    "ConsoleStyle",
     "Request",
     "JSONResponse",
     "Response",
     "ResponseNotFoundError",
     "ResponseValidationError",
     "ResponseValueError",
-    "HexoServer",
 ]

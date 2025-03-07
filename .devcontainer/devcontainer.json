@@ -14,14 +14,24 @@
 			"settings": {
 				"terminal.integrated.shell.linux": "/bin/bash",
 				"python.defaultInterpreterPath": "/workspaces/venv/bin/python",
+				"python.analysis.autoSearchPaths": true,
+				"python.analysis.typeCheckingMode": "strict",
+				"python.analysis.autoImportCompletions": true,
+				"python.linting.enabled": true,
+				"python.linting.mypyEnabled": true,
+				"python.linting.pylintEnabled": false,
+				"python.linting.flake8Enabled": false,
 				"git.enabled": true,
 				"git.autofetch": true,
 				"git.confirmSync": false
 			},
 			"extensions": [
+				"ms-python.autopep8",
+				"ms-python.black-formatter",
+				"ms-python.debugpy",
+				"ms-python.isort",
 				"ms-python.python",
 				"ms-python.vscode-pylance",
-				"ms-python.black-formatter",
 				"streetsidesoftware.code-spell-checker"
 			]
 		}
