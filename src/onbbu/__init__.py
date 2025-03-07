@@ -2,7 +2,7 @@ from argparse import ArgumentParser, Namespace
 import sys
 import os
 
-from typing import List
+from typing import Any, List
 import uvicorn
 
 from onbbu.logger import LogLevel, logger
@@ -32,8 +32,13 @@ installed_apps: List[str] = ConfigLoader(BASE_DIR).load_python_config(
     path="internal/settings.py",
     attribute="INSTALLED_APPS",
     default=[],
-)
+) # type: ignore
 
+server: ServerHttp = ConfigLoader(BASE_DIR).load_python_config(
+    path="internal/main.py",
+    attribute="server",
+    default=None,
+) # type: ignore
 
 
 database = DatabaseManager(
@@ -41,17 +46,9 @@ database = DatabaseManager(
     INSTALLED_APPS=installed_apps,
 )
 
-
 def create_app(port: int = 8000) -> ServerHttp:
     """Crea y retorna una instancia del servidor."""
     return ServerHttp(port=port, database=database, environment=environment)
-
-
-server: ServerHttp = ConfigLoader(BASE_DIR).load_python_config(
-    path="internal/main.py",
-    attribute="server",
-    default=None,
-)
 
 
 @register_command
@@ -69,7 +66,7 @@ class CommandMigrate(BaseCommand):
     #        "--port", type=int, default=8000, help="Port for the server"
     #    )
 
-    async def handle(self, args: Namespace):
+    async def handle(self, *args: Namespace, **kwargs: dict[str, Any]) -> None:
 
         await database.init()
 
@@ -90,8 +87,8 @@ class CommandCreateModule(BaseCommand):
             "--name", type=str, default="demo", help="Nombre del moodulo"
         )
 
-    async def handle(self, args: Namespace):
-        create_module(path=BASE_DIR, name=args.name)
+    async def handle(self, *args: Namespace, **kwargs: dict[str, Any]) -> None:
+        await create_module(path=BASE_DIR, name=args.name) # type: ignore
 
 
 @register_command
@@ -109,7 +106,7 @@ class CommandRunServer(BaseCommand):
     #        "--port", type=int, default=8000, help="Port for the server"
     #    )
 
-    async def handle(self, args: Namespace):
+    async def handle(self, *args: Namespace, **kwargs: dict[str, Any]) -> None:
 
         if hasattr(server, "server"):
             logger.log(
@@ -121,7 +118,7 @@ class CommandRunServer(BaseCommand):
             for route in server.server.routes:
                 logger.log(
                     level=LogLevel.INFO,
-                    message=f"🔗 {route.path} -> {route.name} ({route.methods})",
+                    message=f"🔗 {route.path} -> {route.name} ({route.methods})", # type: ignore
                     extra_data={},
                 )
 
@@ -158,30 +155,30 @@ async def cli():
     await manager.execute()
 
 
-def main():
-
-    parser: ArgumentParser = ArgumentParser(description="CLI para manejar Onbbu")
-
-    subparsers = parser.add_subparsers(dest="command")
-
-    subparsers.add_parser("run", help="Iniciar el servidor")
-
-    subparsers.add_parser("makemigrations", help="Generar una nueva migración")
-
-    subparsers.add_parser("migrate", help="Aplicar migraciones")
-
-    subparsers.add_parser("routes", help="Listar rutas de")
-
-    args: Namespace = parser.parse_args()
-
-    parser.print_help()
-
-    # if args.command == "run":
-    #    run_server(server=server)
-    # elif args.command == "routes":
-    #    list_routes()
-    # else:
-    #    parser.print_help()
+#def main():
+#
+#    parser: ArgumentParser = ArgumentParser(description="CLI para manejar Onbbu")
+#
+#    subparsers = parser.add_subparsers(dest="command")
+#
+#    subparsers.add_parser("run", help="Iniciar el servidor")
+#
+#    subparsers.add_parser("makemigrations", help="Generar una nueva migración")
+#
+#    subparsers.add_parser("migrate", help="Aplicar migraciones")
+#
+#    subparsers.add_parser("routes", help="Listar rutas de")
+#
+#    args: Namespace = parser.parse_args()
+#
+#    parser.print_help()
+#
+#    # if args.command == "run":
+#    #    run_server(server=server)
+#    # elif args.command == "routes":
+#    #    list_routes()
+#    # else:
+#    #    parser.print_help()
 
 
 __all__ = [

@@ -11,6 +11,7 @@ install:
 	$(PIP) install --upgrade pip
 
 build:
+	rm -fr dist
 	python -m build
 
 publish:
