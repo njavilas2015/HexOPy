@@ -11,7 +11,7 @@ jobs:
 
     env:
       DOCKER_USERNAME: njavilas
-      DOCKER_VERSION: 0.0.2
+      DOCKER_VERSION: 0.0.3
       DOCKER_NAME: onbbu-py
 
     steps:
