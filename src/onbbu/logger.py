@@ -2,8 +2,10 @@ from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 import json
 import logging
+from logging import Logger as Logging
 from logging.handlers import RotatingFileHandler
 from typing import Any, Dict, Optional, Union
+from os import getenv
 
 import requests
 from rich.console import Console
@@ -26,7 +28,7 @@ DEFAULT_SERVER_URL: str = "https://api.onbbu.ar/logs"
 
 class JsonFormatter(logging.Formatter):
 
-    def format(self, record: logging.LogRecord):
+    def format(self, record: logging.LogRecord) -> str:
 
         log_entry: Dict[str, Union[str, Dict[str, Any]]] = {
             "timestamp": self.formatTime(record, "%Y-%m-%d %H:%M:%S"),
@@ -40,10 +42,11 @@ class JsonFormatter(logging.Formatter):
 
 class Logger:
     console: Console
+    server_url: Optional[str]
+    executor: ThreadPoolExecutor
+    logger: Logging
 
-    def __init__(self, log_file: Optional[str], server_url: Optional[str]):
-
-        log_file = log_file or "onbbu.log"
+    def __init__(self, log_file: str, server_url: str) -> None:
 
         self.server_url = server_url
 
@@ -65,7 +68,7 @@ class Logger:
 
         self.logger.addHandler(file_handler)
 
-    def log(self, level: LogLevel, message: str, extra_data: Dict[str, str]):
+    def log(self, level: LogLevel, message: str, extra_data: Dict[str, str]) -> None:
         """Logs a message and prints it nicely in the terminal."""
 
         log_function = {
@@ -88,7 +91,9 @@ class Logger:
 
         self.executor.submit(self.send_log, log_data)
 
-    def pretty_print(self, level: LogLevel, message: str, extra_data: Dict[str, str]):
+    def pretty_print(
+        self, level: LogLevel, message: str, extra_data: Dict[str, str]
+    ) -> None:
         """Prints logs in the terminal with colors and nice formatting using Rich."""
 
         level_colors: dict[LogLevel, str] = {
@@ -112,7 +117,7 @@ class Logger:
 
         self.console.print(text)
 
-    def send_log(self, log_data: Dict[str, str]):
+    def send_log(self, log_data: Dict[str, str]) -> None:
         """Sends logs to the server asynchronously."""
         try:
 
@@ -129,4 +134,7 @@ class Logger:
             self.logger.error(f"Error sending log to server: {e}")
 
 
-logger: Logger = Logger(log_file=None, server_url=None)
+logger: Logger = Logger(
+    log_file=getenv("LOGGER_FILE", "onbbu.log"),
+    server_url=getenv("LOGGER_SERVER_URL", DEFAULT_SERVER_URL),
+)

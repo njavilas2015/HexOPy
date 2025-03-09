@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "onbbu"
-version = "0.0.37"
+version = "0.1.1"
 description = "Onbbu 🛠️🐍 – Hexagonal Architecture for Python"
 readme = "README.md"
 authors = [{ name = "Javier Avila njavilas", email = "njavilas2015@gmail.com" }]
@@ -26,10 +26,15 @@ dependencies = [
     "tortoise-orm>=0.24.1",
     "rich>=13.9.4",
     "aiosqlite",
+    "typing-extensions",
 ]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+packages = ["onbbu"]  
+
+[tool.setuptools.package-data]
+onbbu = ["**/*.pyi"]  
 
 [project.scripts]
 onbbu = "onbbu:cli"

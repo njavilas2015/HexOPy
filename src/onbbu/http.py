@@ -1,16 +1,18 @@
 from dataclasses import asdict, is_dataclass, dataclass
 from enum import Enum
-from typing import Awaitable, Callable, Generic
+from typing import Awaitable, Callable, Generic, Optional, TypeVar
 import multiprocessing
 from contextlib import asynccontextmanager
+from os import getenv
 
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 from starlette.requests import Request as StarletteRequest
 from starlette.routing import Route
 
-from onbbu.database import DatabaseManager
-from onbbu.types import T
+from onbbu.database import DatabaseManager, database
+
+T = TypeVar("T")
 
 
 class Request(StarletteRequest):
@@ -46,11 +48,11 @@ class Response(Generic[T], JSONResponse):
     def render(self, content: T) -> bytes:  # type: ignore
 
         if is_dataclass(content):
-            content = asdict(content)
+            content = asdict(content)  # type: ignore
 
         elif isinstance(content, list):
             content = [
-                (asdict(item) if is_dataclass(item) else item) for item in content
+                (asdict(item) if is_dataclass(item) else item) for item in content  # type: ignore
             ]
 
         return super().render(content)
@@ -66,6 +68,13 @@ class HTTPMethod(Enum):
 EndpointHttpType = Callable[[Request], Awaitable[JSONResponse]]
 
 
+@dataclass(frozen=True, slots=True)
+class RouteDTO:
+    path: str
+    endpoint: EndpointHttpType
+    method: HTTPMethod
+
+
 class RouterHttp:
     __router: list[Route]
     __prefix: str
@@ -74,37 +83,38 @@ class RouterHttp:
         self.__router = []
         self.__prefix = prefix.rstrip("/")
 
-    def add_route(self, path: str, endpoint: EndpointHttpType, method: HTTPMethod):
+    def add_route(self, dto: RouteDTO) -> None:
 
-        full_path: str = f"{self.__prefix}{path}"
+        full_path: str = f"{self.__prefix}{dto.path}"
 
         self.__router.append(
-            Route(path=full_path, endpoint=endpoint, methods=[method.value])
+            Route(path=full_path, endpoint=dto.endpoint, methods=[dto.method.value])
         )
 
-    def get_router(self):
+    def get_router(self) -> list[Route]:
         return self.__router
 
-    def get_routes(self):
+    def get_routes(self) -> list[str]:
         return [route.path for route in self.__router]
-
-    def get_endpoints(self):
-        return [route.endpoint for route in self.__router]
 
 
 class ServerHttp:
     database: DatabaseManager
+    host: str
+    port: int
+    environment: str
+    reload: bool
+    workers: int
+    server: Starlette
 
-    def __init__(self, environment: str, database: DatabaseManager, port: int = 8000):
+    def __init__(self, environment: str, port: Optional[int]):
         self.host = "0.0.0.0"
-        self.port = port
+        self.port = port or 8000
         self.environment = environment
         self.reload = self.environment == "development"
         self.workers = 1 if self.reload else max(2, multiprocessing.cpu_count() - 1)
 
         self.server = Starlette(debug=True, routes=[], lifespan=self._lifespan)
-
-        self.config = ConfigInit(http=self)
 
         self.database = database
 
@@ -115,10 +125,17 @@ class ServerHttp:
         yield
         await self.database.close()
 
-    def include_router(self, router: RouterHttp):
+    def include_router(self, router: RouterHttp) -> None:
         """Agrega todas las rutas de un RouterHttp a la aplicación"""
         self.server.router.routes.extend(router.get_router())
+
 
 @dataclass(frozen=True, slots=True)
 class ConfigInit:
     http: ServerHttp
+
+
+servier_http: ServerHttp = ServerHttp(
+    port=int(getenv("HTTP_PORT", "8000")),
+    environment=getenv("ENVIRONMENT", "development"),
+)

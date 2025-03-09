@@ -1,51 +1,24 @@
-import importlib
-import pkgutil
-from types import ModuleType
-from typing import Any
-
-from tortoise import Tortoise
+from typing import Any, List, Type
+from os import getenv
+from tortoise import Model, Tortoise
 from onbbu.logger import LogLevel, logger
-from aerich import Command # type: ignore
+from aerich import Command  # type: ignore
+
 
 class DatabaseManager:
-    def __init__(self, database_url: str, INSTALLED_APPS: list[str]):
+    database_url: str
+    command: Command  # type: ignore
+
+    def __init__(self, database_url: str):
         self.database_url = database_url
-        self.model_modules: list[str] = []
-        self.INSTALLED_APPS = INSTALLED_APPS
+        self.models: List[Type[Model]] = []
 
-    async def load_models(self) -> None:
-        """Dynamically load models from installed applications."""
-        for app in self.INSTALLED_APPS:
-            model_path: str = f"pkg.{app}.infrastructure.persistence.models"
+    def register(self, model: Type[Model]) -> None:
+        """Register a model in the database"""
+        if model not in self.models:
+            self.models.append(model)
 
-            try:
-                module: ModuleType = importlib.import_module(model_path)
-
-                logger.log(
-                    level=LogLevel.INFO,
-                    message=f"📦 Base module found: {model_path}",
-                    extra_data={},
-                )
-
-                if hasattr(module, "__path__"):
-                    for _, module_name, _ in pkgutil.iter_modules(module.__path__):
-                        full_module_name = f"{model_path}.{module_name}"
-                        self.model_modules.append(full_module_name)
-
-                        logger.log(
-                            level=LogLevel.INFO,
-                            message=f"✅ Loaded model: {full_module_name}",
-                            extra_data={},
-                        )
-
-            except ModuleNotFoundError as e:
-                logger.log(
-                    level=LogLevel.INFO,
-                    message=f"⚠️ Warning: Could not import {model_path}: {e}",
-                    extra_data={},
-                )
-
-    def get_config(self):
+    def get_config(self) -> dict[str, Any]:
 
         tortoise_config: dict[str, Any] = {
             "connections": {
@@ -53,7 +26,7 @@ class DatabaseManager:
             },
             "apps": {
                 "models": {
-                    "models": self.model_modules,
+                    "models": self.models,
                     "default_connection": "default",
                 },
             },
@@ -64,12 +37,10 @@ class DatabaseManager:
     async def init(self) -> None:
         """Initialize the database and apply the migrations."""
 
-        await self.load_models()
-
-        if not self.model_modules:
+        if not self.models:
             logger.log(
                 level=LogLevel.ERROR,
-                message="❌ No models found. Check Check `INSTALLED_APPS`.",
+                message="❌ No models found. Check Check.",
                 extra_data={},
             )
 
@@ -77,7 +48,7 @@ class DatabaseManager:
 
         logger.log(
             level=LogLevel.INFO,
-            message=f"🔄 Initializing Tortoise with models: {self.model_modules}",
+            message=f"🔄 Initializing Tortoise with models: {self.models}",
             extra_data={},
         )
 
@@ -138,9 +109,7 @@ class DatabaseManager:
             extra_data={},
         )
 
-        await Tortoise.init(
-            db_url=self.database_url, modules={"models": self.model_modules}
-        )
+        await Tortoise.init(config=self.get_config())
 
         await Tortoise.generate_schemas()
 
@@ -255,3 +224,8 @@ class DatabaseManager:
             message=f"✅ Database connections closed..",
             extra_data={},
         )
+
+
+database: DatabaseManager = DatabaseManager(
+    database_url=getenv("DATABASE_URL", "sqlite://db.sqlite3")
+)

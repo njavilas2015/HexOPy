@@ -1,121 +1,143 @@
-from argparse import ArgumentParser, HelpFormatter, Namespace
-import importlib
 import os
-import pkgutil
-from typing import Any, Dict, List, Optional
-
-
-async def create_module(path: str, name: str):
-
-    folders: list[str] = [
-        "domain",
-        "domain/entities",
-        "domain/services",
-        "application/dto",
-        "application/commands",
-        "application/use_cases",
-        "infrastructure/adapters",
-        "infrastructure/cache",
-        "infrastructure/logger",
-        "infrastructure/messaging",
-        "infrastructure/persistence/models",
-        "infrastructure/persistence/repositories",
-        "infrastructure/services",
-        "infrastructure/storage",
-        "infrastructure/transformers",
-    ]
-
-    for folder in folders:
-        dir_path = os.path.join(path, "pkg", name, folder)
-        os.makedirs(dir_path, exist_ok=True)
+import asyncio
+from argparse import ArgumentParser, HelpFormatter, Namespace
+from typing import List
+from onbbu.database import database
+from onbbu.http import servier_http
+from onbbu.logger import logger, LogLevel
+import uvicorn
 
 
 class BaseCommand:
-    """Base class for all commands."""
-
     name: str
-    help: str = "Base command description"
-    parser: Optional[ArgumentParser] = None
+    help: str
 
-    def __init__(self) -> None:
-        self.parser: Optional[ArgumentParser] = None
-
-    async def add_arguments(self, parser: ArgumentParser) -> None:
-        """Override this method to add custom arguments."""
+    def add_arguments(self, parser: ArgumentParser) -> None:
+        """Método para que cada comando defina sus propios argumentos."""
         pass
 
-    async def handle(self, *args: Namespace, **kwargs: dict[str, Any]) -> None:
-        """Override this method to implement command logic."""
-        raise NotImplementedError("Subclasses must implement handle()")
+    async def handler(self, args: Namespace) -> None:
+        """Método asíncrono que ejecutará la lógica del comando."""
+        pass
 
 
-COMMANDS: Dict[str, BaseCommand] = {}
+class MigrateCommand(BaseCommand):
+    name: str = "migrate"
+    help: str = "Ejecuta migraciones"
 
+    async def handler(self, args: Namespace) -> None:
+        print("Ejecutando migraciones...")
 
-def register_command(cls: type[BaseCommand]) -> type[BaseCommand]:
-    """Decorator to register commands automatically."""
-    COMMANDS[cls.name.lower()] = cls()
-    return cls
+        await database.init()
 
+        await database.migrate()
 
-class Manager:
-    """Command-line manager for executing various tasks."""
+        await database.close()
 
-    def __init__(self, INSTALLED_APPS: List[str], COMMANDS: Dict[str, BaseCommand]):
-        self.parser = ArgumentParser(
-            description="Management script",
-            formatter_class=lambda prog: HelpFormatter(prog, max_help_position=30),
+        logger.log(
+            level=LogLevel.INFO,
+            message=f"✅ End command migrate..",
+            extra_data={},
         )
 
-        self.subparsers = self.parser.add_subparsers(dest="command", metavar="command")
 
-        self.INSTALLED_APPS = INSTALLED_APPS
+class CreateModuleCommand(BaseCommand):
+    name: str = "create_module"
+    help: str = "Crea un módulo"
 
-        self.COMMANDS = COMMANDS
+    def add_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument("-n", "--nombre", help="Nombre del módulo", required=True)
+        parser.add_argument(
+            "-a", "--notify", action="store_true", help="Notificar inmediatamente"
+        )
 
-    async def internal_command(self, commands: list[BaseCommand]):
-        """Execute a system command."""
+    async def handler(self, args: Namespace) -> None:
+        """Ejecuta la lógica asíncrona de creación del módulo."""
+        path = os.getcwd()
+        name = args.nombre
 
-        for command in commands:
-            self.COMMANDS[command.name] = command
+        folders: list[str] = [
+            "domain",
+            "domain/entities",
+            "domain/services",
+            "application/dto",
+            "application/commands",
+            "application/use_cases",
+            "infrastructure/adapters",
+            "infrastructure/cache",
+            "infrastructure/logger",
+            "infrastructure/messaging",
+            "infrastructure/persistence/models",
+            "infrastructure/persistence/repositories",
+            "infrastructure/services",
+            "infrastructure/storage",
+            "infrastructure/transformers",
+        ]
 
-    async def load_commands(self):
-        """Dynamically load commands from installed apps."""
-        for app in self.INSTALLED_APPS:
-            commands_path = f"pkg.{app}.application.commands"
-            try:
-                module = importlib.import_module(commands_path)
+        async def create_folder(folder: str):
+            dir_path = os.path.join(path, "pkg", name, folder)
+            await asyncio.to_thread(os.makedirs, dir_path, exist_ok=True)
 
-                if hasattr(module, "__path__"):
-                    for _, module_name, _ in pkgutil.iter_modules(module.__path__):
+        await asyncio.gather(*(create_folder(folder) for folder in folders))
 
-                        full_module_name = f"{commands_path}.{module_name}"
+        print(f"Módulo '{name}' creado en {path}/pkg/{name}")
 
-                        command_module = importlib.import_module(full_module_name)
 
-                        if hasattr(command_module, "Command"):
-                            command_instance: BaseCommand = command_module.Command()
-                            self.COMMANDS[command_instance.name] = command_instance
+class RunServerCommand(BaseCommand):
+    name: str = "runserver"
+    help: str = "Inicia el servidor"
 
-            except ModuleNotFoundError as e:
-                print(f"Warning: Could not import {commands_path}: {e}")
+    def add_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument("-n", "--nombre", help="Nombre del módulo", required=True)
+        parser.add_argument(
+            "-a", "--notify", action="store_true", help="Notificar inmediatamente"
+        )
 
-        for name, command in self.COMMANDS.items():
+    async def handler(self, args: Namespace) -> None:
+        logger.log(
+            level=LogLevel.INFO,
+            message=f"🚀 Iniciando servidor en {servier_http.host}:{servier_http.port} ...",
+            extra_data={},
+        )
 
-            command_parser = self.subparsers.add_parser(name, help=command.help)
+        for route in servier_http.server.routes:
+            logger.log(
+                level=LogLevel.INFO,
+                message=f"🔗 {route.path} -> {route.name} ({route.methods})",  # type: ignore
+                extra_data={},
+            )
 
-            await command.add_arguments(command_parser)
+        uvicorn.run(
+            "servier_http",
+            host=servier_http.host,
+            port=servier_http.port,
+            reload=servier_http.reload,
+            workers=servier_http.workers,
+        )
 
-            command.parser = command_parser
 
-    async def execute(self):
-        """Parse and execute commands dynamically."""
+async def cli() -> None:
+    commands: List[BaseCommand] = [
+        CreateModuleCommand(),
+        MigrateCommand(),
+        RunServerCommand(),
+    ]
 
-        args: Namespace = self.parser.parse_args()
+    parser = ArgumentParser(
+        description="Onbbu Management script",
+        formatter_class=lambda prog: HelpFormatter(prog, max_help_position=30),
+    )
 
-        command = self.COMMANDS.get(args.command)
+    subparsers = parser.add_subparsers(dest="command", metavar="command")
 
-        if command:
-            await command.handle(args)
-        else:
-            self.parser.print_help()
+    for command in commands:
+        command_parser = subparsers.add_parser(command.name, help=command.help)
+        command.add_arguments(command_parser)
+        command_parser.set_defaults(func=command.handler)
+
+    args: Namespace = parser.parse_args()
+
+    if hasattr(args, "func"):
+        await args.func(args)
+    else:
+        parser.print_help()
