@@ -3,7 +3,7 @@ import asyncio
 from argparse import ArgumentParser, HelpFormatter, Namespace
 from typing import List
 from onbbu.database import database
-from onbbu.http import servier_http
+from onbbu.http import server_http
 from onbbu.logger import logger, LogLevel
 import uvicorn
 
@@ -96,11 +96,11 @@ class RunServerCommand(BaseCommand):
     async def handler(self, args: Namespace) -> None:
         logger.log(
             level=LogLevel.INFO,
-            message=f"🚀 Iniciando servidor en {servier_http.host}:{servier_http.port} ...",
+            message=f"🚀 Iniciando servidor en {server_http.host}:{server_http.port} ...",
             extra_data={},
         )
 
-        for route in servier_http.server.routes:
+        for route in server_http.server.routes:
             logger.log(
                 level=LogLevel.INFO,
                 message=f"🔗 {route.path} -> {route.name} ({route.methods})",  # type: ignore
@@ -108,23 +108,17 @@ class RunServerCommand(BaseCommand):
             )
 
         uvicorn.run(
-            "servier_http",
-            host=servier_http.host,
-            port=servier_http.port,
-            reload=servier_http.reload,
-            workers=servier_http.workers,
+            "server_http",
+            host=server_http.host,
+            port=server_http.port,
+            reload=server_http.reload,
+            workers=server_http.workers,
         )
 
 
-async def cli() -> None:
-    commands: List[BaseCommand] = [
-        CreateModuleCommand(),
-        MigrateCommand(),
-        RunServerCommand(),
-    ]
-
+async def menu_cli(description: str, commands: List[BaseCommand]) -> None:
     parser = ArgumentParser(
-        description="Onbbu Management script",
+        description=description,
         formatter_class=lambda prog: HelpFormatter(prog, max_help_position=30),
     )
 
@@ -141,3 +135,14 @@ async def cli() -> None:
         await args.func(args)
     else:
         parser.print_help()
+
+
+async def cli() -> None:
+
+    commands: List[BaseCommand] = [
+        CreateModuleCommand(),
+        MigrateCommand(),
+        RunServerCommand(),
+    ]
+
+    await menu_cli(description="Onbbu Management script", commands=commands)

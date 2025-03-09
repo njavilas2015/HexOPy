@@ -130,12 +130,7 @@ class ServerHttp:
         self.server.router.routes.extend(router.get_router())
 
 
-@dataclass(frozen=True, slots=True)
-class ConfigInit:
-    http: ServerHttp
-
-
-servier_http: ServerHttp = ServerHttp(
+server_http: ServerHttp = ServerHttp(
     port=int(getenv("HTTP_PORT", "8000")),
     environment=getenv("ENVIRONMENT", "development"),
 )

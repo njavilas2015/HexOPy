@@ -1,6 +1,7 @@
 from argparse import ArgumentParser, Namespace
+from typing import List
 from onbbu.database import database as database
-from onbbu.http import servier_http as servier_http
+from onbbu.http import server_http as server_http
 from onbbu.logger import LogLevel as LogLevel, logger as logger
 
 class BaseCommand:
@@ -27,3 +28,5 @@ class RunServerCommand(BaseCommand):
     async def handler(self, args: Namespace) -> None: ...
 
 async def cli() -> None: ...
+
+async def menu_cli(description: str, commands: List[BaseCommand]) -> None: ...

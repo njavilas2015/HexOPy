@@ -53,8 +53,4 @@ class ServerHttp:
     def __init__(self, environment: str, port: int | None) -> None: ...
     def include_router(self, router: RouterHttp) -> None: ...
 
-@dataclass(frozen=True, slots=True)
-class ConfigInit:
-    http: ServerHttp
-
-servier_http: ServerHttp
+server_http: ServerHttp
