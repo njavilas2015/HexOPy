@@ -1,3 +1,0 @@
-{"timestamp": "2025-03-02 14:06:38", "level": "INFO", "message": "🎉 Schemes generated successfully."}
-{"timestamp": "2025-03-02 14:06:38", "level": "INFO", "message": "User logged in", "extra": {"user": "admin", "ip": "192.168.1.10"}}
-{"timestamp": "2025-03-02 14:06:38", "level": "ERROR", "message": "Database is down", "extra": {"db": "PostgreSQL", "status": "down"}}
