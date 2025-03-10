@@ -25,10 +25,10 @@ class JSONResponse(StarletteJSONResponse):
     pass
 
 
-class ResponseNotFoundError(Generic[T], JSONResponse):
+class ResponseNotFoundError(JSONResponse):
 
-    def render(self, content: T) -> bytes:
-        content = {"error": str(content)}  # type: ignore
+    def render(self, content: str) -> bytes:
+        content = {"error": content}  # type: ignore
 
         return super().render(content, status_code=404)  # type: ignore
 
