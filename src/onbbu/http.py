@@ -12,14 +12,18 @@ from starlette.routing import Route
 
 from onbbu.database import DatabaseManager, database
 
+from pydantic import ValidationError
+
 T = TypeVar("T")
 
 
 class Request(StarletteRequest):
     pass
 
+
 class JSONResponse(StarletteJSONResponse):
     pass
+
 
 class ResponseNotFoundError(Generic[T], JSONResponse):
 
@@ -29,17 +33,17 @@ class ResponseNotFoundError(Generic[T], JSONResponse):
         return super().render(content, status_code=404)  # type: ignore
 
 
-class ResponseValueError(Generic[T], JSONResponse):
+class ResponseValueError(JSONResponse):
 
-    def render(self, content: T) -> bytes:
+    def render(self, content: ValueError) -> bytes:
         content = {"error": str(content)}  # type: ignore
 
         return super().render(content, status_code=500)  # type: ignore
 
 
-class ResponseValidationError(Generic[T], JSONResponse):
+class ResponseValidationError(JSONResponse):
 
-    def render(self, content: T) -> bytes:
+    def render(self, content: ValidationError) -> bytes:
         content = {"detail": content.errors()}  # type: ignore
 
         return super().render(content, status_code=400)  # type: ignore

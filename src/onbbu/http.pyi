@@ -6,6 +6,7 @@ from starlette.requests import Request as StarletteRequest
 from starlette.responses import JSONResponse as StarletteJSONResponse
 from starlette.routing import Route
 from typing import Awaitable, Callable, Generic, TypeVar
+from pydantic import ValidationError
 
 T = TypeVar("T")
 
@@ -15,11 +16,11 @@ class JSONResponse(StarletteJSONResponse): ...
 class ResponseNotFoundError(JSONResponse, Generic[T]):
     def render(self, content: T) -> bytes: ...
 
-class ResponseValueError(JSONResponse, Generic[T]):
-    def render(self, content: T) -> bytes: ...
+class ResponseValueError(JSONResponse):
+    def render(self, content: ValueError) -> bytes: ...
 
-class ResponseValidationError(JSONResponse, Generic[T]):
-    def render(self, content: T) -> bytes: ...
+class ResponseValidationError(JSONResponse):
+    def render(self, content: ValidationError) -> bytes: ...
 
 class Response(JSONResponse, Generic[T]):
     def render(self, content: T) -> bytes: ...
