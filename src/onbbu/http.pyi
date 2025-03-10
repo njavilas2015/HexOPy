@@ -7,10 +7,9 @@ from starlette.responses import JSONResponse as StarletteJSONResponse
 from starlette.routing import Route
 from typing import Awaitable, Callable, Generic, TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 class Request(StarletteRequest): ...
-
 class JSONResponse(StarletteJSONResponse): ...
 
 class ResponseNotFoundError(JSONResponse, Generic[T]):
@@ -26,10 +25,11 @@ class Response(JSONResponse, Generic[T]):
     def render(self, content: T) -> bytes: ...
 
 class HTTPMethod(Enum):
-    GET = 'GET'
-    POST = 'POST'
-    PUT = 'PUT'
-    DELETE = 'DELETE'
+    GET = "GET"
+    POST = "POST"
+    PUT = "PUT"
+    DELETE = "DELETE"
+
 EndpointHttpType = Callable[[Request], Awaitable[JSONResponse]]
 
 @dataclass(frozen=True, slots=True)
@@ -39,8 +39,9 @@ class RouteDTO:
     method: HTTPMethod
 
 class RouterHttp:
-    def __init__(self, prefix: str = '') -> None: ...
+    def __init__(self, prefix: str = "") -> None: ...
     def add_route(self, dto: RouteDTO) -> None: ...
+    def add_routes(self, dto: list[RouteDTO]) -> None: ...
     def get_router(self) -> list[Route]: ...
     def get_routes(self) -> list[str]: ...
 

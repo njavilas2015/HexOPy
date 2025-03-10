@@ -93,6 +93,10 @@ class RouterHttp:
             Route(path=full_path, endpoint=dto.endpoint, methods=[dto.method.value])
         )
 
+    def add_routes(self, dtos: list[RouteDTO]) -> None:
+        for dto in dtos:
+            self.add_route(dto)
+
     def get_router(self) -> list[Route]:
         return self.__router
 
