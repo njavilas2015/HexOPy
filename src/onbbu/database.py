@@ -11,12 +11,12 @@ class DatabaseManager:
 
     def __init__(self, database_url: str):
         self.database_url = database_url
-        self.models: List[Type[Model]] = []
+        self.models: List[str] = []
 
     def register_models(self, model: Type[Model]) -> None:
         """Register a model in the database"""
         if model not in self.models:
-            self.models.append(model)
+            self.models.append(model.__module__)
 
     def get_config(self) -> dict[str, Any]:
 
