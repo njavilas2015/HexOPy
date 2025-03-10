@@ -3,13 +3,15 @@ from enum import Enum
 from onbbu.database import DatabaseManager as DatabaseManager, database as database
 from starlette.applications import Starlette
 from starlette.requests import Request as StarletteRequest
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse as StarletteJSONResponse
 from starlette.routing import Route
 from typing import Awaitable, Callable, Generic, TypeVar
 
 T = TypeVar('T')
 
 class Request(StarletteRequest): ...
+
+class JSONResponse(StarletteJSONResponse): ...
 
 class ResponseNotFoundError(JSONResponse, Generic[T]):
     def render(self, content: T) -> bytes: ...

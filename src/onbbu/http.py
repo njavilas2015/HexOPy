@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from os import getenv
 
 from starlette.applications import Starlette
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse as StarletteJSONResponse
 from starlette.requests import Request as StarletteRequest
 from starlette.routing import Route
 
@@ -18,6 +18,8 @@ T = TypeVar("T")
 class Request(StarletteRequest):
     pass
 
+class JSONResponse(StarletteJSONResponse):
+    pass
 
 class ResponseNotFoundError(Generic[T], JSONResponse):
 
