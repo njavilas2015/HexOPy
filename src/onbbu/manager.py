@@ -88,10 +88,11 @@ class RunServerCommand(BaseCommand):
     help: str = "Inicia el servidor"
 
     def add_arguments(self, parser: ArgumentParser) -> None:
-        parser.add_argument("-n", "--nombre", help="Nombre del módulo", required=True)
-        parser.add_argument(
-            "-a", "--notify", action="store_true", help="Notificar inmediatamente"
-        )
+        #parser.add_argument("-n", "--nombre", help="Nombre del módulo", required=True)
+        #parser.add_argument(
+        #    "-a", "--notify", action="store_true", help="Notificar inmediatamente"
+        #)
+        pass
 
     async def handler(self, args: Namespace) -> None:
         logger.log(
