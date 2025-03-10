@@ -9,10 +9,13 @@ from starlette.applications import Starlette
 from starlette.responses import JSONResponse as StarletteJSONResponse
 from starlette.requests import Request as StarletteRequest
 from starlette.routing import Route
+import uvicorn
 
 from onbbu.database import DatabaseManager, database
 
 from pydantic import ValidationError
+
+from onbbu.logger import LogLevel, logger
 
 T = TypeVar("T")
 
@@ -144,3 +147,19 @@ server_http: ServerHttp = ServerHttp(
     port=int(getenv("HTTP_PORT", "8000")),
     environment=getenv("ENVIRONMENT", "development"),
 )
+
+def runserver(server_http: ServerHttp) -> None:
+    logger.log(
+        level=LogLevel.INFO,
+        message=f"🚀 Iniciando servidor en {server_http.host}:{server_http.port} ...",
+        extra_data={},
+    )
+
+    for route in server_http.server.routes:
+        logger.log(
+            level=LogLevel.INFO,
+            message=f"🔗 {route.path} -> {route.name} ({route.methods})",  # type: ignore
+            extra_data={},
+        )
+
+    uvicorn.run(server_http.server, host=server_http.host, port=server_http.port)

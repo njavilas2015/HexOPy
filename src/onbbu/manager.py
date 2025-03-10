@@ -3,10 +3,7 @@ import asyncio
 from argparse import ArgumentParser, HelpFormatter, Namespace
 from typing import List
 from onbbu.database import database
-from onbbu.http import server_http
 from onbbu.logger import logger, LogLevel
-import uvicorn
-
 
 class BaseCommand:
     name: str
@@ -83,40 +80,6 @@ class CreateModuleCommand(BaseCommand):
         print(f"Módulo '{name}' creado en {path}/pkg/{name}")
 
 
-class RunServerCommand(BaseCommand):
-    name: str = "runserver"
-    help: str = "Inicia el servidor"
-
-    def add_arguments(self, parser: ArgumentParser) -> None:
-        #parser.add_argument("-n", "--nombre", help="Nombre del módulo", required=True)
-        #parser.add_argument(
-        #    "-a", "--notify", action="store_true", help="Notificar inmediatamente"
-        #)
-        pass
-
-    async def handler(self, args: Namespace) -> None:
-        logger.log(
-            level=LogLevel.INFO,
-            message=f"🚀 Iniciando servidor en {server_http.host}:{server_http.port} ...",
-            extra_data={},
-        )
-
-        for route in server_http.server.routes:
-            logger.log(
-                level=LogLevel.INFO,
-                message=f"🔗 {route.path} -> {route.name} ({route.methods})",  # type: ignore
-                extra_data={},
-            )
-
-        uvicorn.run(
-            "server_http",
-            host=server_http.host,
-            port=server_http.port,
-            reload=server_http.reload,
-            workers=server_http.workers,
-        )
-
-
 async def menu_cli(description: str, commands: List[BaseCommand]) -> None:
     parser = ArgumentParser(
         description=description,
@@ -143,7 +106,6 @@ async def cli() -> None:
     commands: List[BaseCommand] = [
         CreateModuleCommand(),
         MigrateCommand(),
-        RunServerCommand(),
     ]
 
     await menu_cli(description="Onbbu Management script", commands=commands)

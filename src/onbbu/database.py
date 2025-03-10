@@ -13,7 +13,7 @@ class DatabaseManager:
         self.database_url = database_url
         self.models: List[Type[Model]] = []
 
-    def register(self, model: Type[Model]) -> None:
+    def register_models(self, model: Type[Model]) -> None:
         """Register a model in the database"""
         if model not in self.models:
             self.models.append(model)
