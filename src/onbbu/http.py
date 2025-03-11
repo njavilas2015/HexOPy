@@ -1,14 +1,20 @@
 from dataclasses import asdict, is_dataclass, dataclass
 from enum import Enum
+import time
 from typing import Awaitable, Callable, Generic, Optional, TypeVar
 import multiprocessing
 from contextlib import asynccontextmanager
 from os import getenv
 
 from starlette.applications import Starlette
-from starlette.responses import JSONResponse as StarletteJSONResponse
+from starlette.responses import (
+    JSONResponse as StarletteJSONResponse,
+    Response as StarletteResponse,
+)
 from starlette.requests import Request as StarletteRequest
 from starlette.routing import Route
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+
 import uvicorn
 
 from onbbu.database import DatabaseManager, database
@@ -65,6 +71,21 @@ class Response(Generic[T], JSONResponse):
             ]
 
         return super().render(content)
+
+
+class TimingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(
+        self, request: StarletteRequest, call_next: RequestResponseEndpoint
+    ) -> StarletteResponse:
+        start_time: float = time.time()
+
+        response: StarletteResponse = await call_next(request)
+
+        process_time: float = time.time() - start_time
+
+        response.headers["X-Process-Time"] = str(process_time)
+
+        return response
 
 
 class HTTPMethod(Enum):
@@ -129,6 +150,8 @@ class ServerHttp:
 
         self.server = Starlette(debug=True, routes=[], lifespan=self._lifespan)
 
+        self.server.add_middleware(TimingMiddleware)
+
         self.database = database
 
     @asynccontextmanager
@@ -147,6 +170,7 @@ server_http: ServerHttp = ServerHttp(
     port=int(getenv("HTTP_PORT", "8000")),
     environment=getenv("ENVIRONMENT", "development"),
 )
+
 
 def runserver(server_http: ServerHttp) -> None:
     logger.log(

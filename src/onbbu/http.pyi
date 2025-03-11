@@ -1,14 +1,16 @@
 from dataclasses import dataclass
 from enum import Enum
 from onbbu.database import DatabaseManager as DatabaseManager, database as database
+from onbbu.logger import LogLevel as LogLevel, logger as logger
+from pydantic import ValidationError as ValidationError
 from starlette.applications import Starlette
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint as RequestResponseEndpoint
 from starlette.requests import Request as StarletteRequest
-from starlette.responses import JSONResponse as StarletteJSONResponse
+from starlette.responses import JSONResponse as StarletteJSONResponse, Response as StarletteResponse
 from starlette.routing import Route
 from typing import Awaitable, Callable, Generic, TypeVar
-from pydantic import ValidationError
 
-T = TypeVar("T")
+T = TypeVar('T')
 
 class Request(StarletteRequest): ...
 class JSONResponse(StarletteJSONResponse): ...
@@ -25,12 +27,14 @@ class ResponseValidationError(JSONResponse):
 class Response(JSONResponse, Generic[T]):
     def render(self, content: T) -> bytes: ...
 
-class HTTPMethod(Enum):
-    GET = "GET"
-    POST = "POST"
-    PUT = "PUT"
-    DELETE = "DELETE"
+class TimingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: StarletteRequest, call_next: RequestResponseEndpoint) -> StarletteResponse: ...
 
+class HTTPMethod(Enum):
+    GET = 'GET'
+    POST = 'POST'
+    PUT = 'PUT'
+    DELETE = 'DELETE'
 EndpointHttpType = Callable[[Request], Awaitable[JSONResponse]]
 
 @dataclass(frozen=True, slots=True)
@@ -40,9 +44,9 @@ class RouteDTO:
     method: HTTPMethod
 
 class RouterHttp:
-    def __init__(self, prefix: str = "") -> None: ...
+    def __init__(self, prefix: str = '') -> None: ...
     def add_route(self, dto: RouteDTO) -> None: ...
-    def add_routes(self, dto: list[RouteDTO]) -> None: ...
+    def add_routes(self, dtos: list[RouteDTO]) -> None: ...
     def get_router(self) -> list[Route]: ...
     def get_routes(self) -> list[str]: ...
 
