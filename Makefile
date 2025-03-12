@@ -12,6 +12,7 @@ install:
 
 lint:
 	cd src && stubgen -p onbbu --output .
+	cd src && black .
 
 build:
 	rm -fr dist

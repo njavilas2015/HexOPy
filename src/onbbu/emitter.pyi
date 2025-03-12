@@ -4,7 +4,7 @@ from typing import Awaitable, Callable
 Listener = Callable[..., None] | Callable[..., Awaitable[None]]
 
 class Event(Enum):
-    DEFAULT_DISCOUNT = 'add_default_discounts'
+    DEFAULT_DISCOUNT = "add_default_discounts"
 
 class EventEmitter:
     def __init__(self) -> None: ...

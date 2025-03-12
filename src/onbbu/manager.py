@@ -5,6 +5,7 @@ from typing import List
 from onbbu.database import database
 from onbbu.logger import logger, LogLevel
 
+
 class BaseCommand:
     name: str
     help: str

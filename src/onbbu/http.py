@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from os import getenv
 
 from starlette.applications import Starlette
-from starlette.responses import JSONResponse, Response
+from starlette.responses import JSONResponse as JSONResponseStarlette, Response
 from starlette.requests import Request as RequestStarlette
 from starlette.routing import Route
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -24,6 +24,10 @@ T = TypeVar("T")
 
 
 class Request(RequestStarlette):
+    pass
+
+
+class JSONResponse(JSONResponseStarlette):
     pass
 
 
