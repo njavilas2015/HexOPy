@@ -1,1 +1,3 @@
 BASE_DIR: str
+
+def main() -> None: ...

@@ -10,9 +10,8 @@ install:
 	$(PIP) install -r requirements.txt
 	$(PIP) install --upgrade pip
 
-types:
-	cd src && stubgen -p onbbu -o stubs
-	mv src/stubs/onbbu src/onbbu/stubs
+lint:
+	cd src && stubgen -p onbbu --output .
 
 build:
 	rm -fr dist

@@ -1,17 +1,14 @@
-from dataclasses import asdict, is_dataclass, dataclass
+from dataclasses import dataclass
 from enum import Enum
 import time
-from typing import Awaitable, Callable, Generic, Optional, TypeVar
+from typing import Any, Awaitable, Callable, Optional, TypeVar
 import multiprocessing
 from contextlib import asynccontextmanager
 from os import getenv
 
 from starlette.applications import Starlette
-from starlette.responses import (
-    JSONResponse as StarletteJSONResponse,
-    Response as StarletteResponse,
-)
-from starlette.requests import Request as StarletteRequest
+from starlette.responses import JSONResponse, Response
+from starlette.requests import Request
 from starlette.routing import Route
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
@@ -26,60 +23,40 @@ from onbbu.logger import LogLevel, logger
 T = TypeVar("T")
 
 
-class Request(StarletteRequest):
-    pass
+class ResponseHttp:
 
+    def json(self, content: Any, status_code: int) -> JSONResponse:
 
-class JSONResponse(StarletteJSONResponse):
-    pass
+        return JSONResponse(content=content, status_code=status_code)
 
+    def validate_error(self, content: ValidationError) -> JSONResponse:
 
-class ResponseNotFoundError(JSONResponse):
+        return JSONResponse(content={"error": content.errors()}, status_code=400)
 
-    def render(self, content: str) -> bytes:
-        content = {"error": content}  # type: ignore
+    def value_error(self, content: ValueError) -> JSONResponse:
 
-        return super().render(content, status_code=404)  # type: ignore
+        return JSONResponse(content={"error": str(content)}, status_code=500)
 
+    def not_found(self, content: str) -> JSONResponse:
 
-class ResponseValueError(JSONResponse):
+        return JSONResponse(content={"error": content}, status_code=404)
 
-    def render(self, content: ValueError) -> bytes:
-        content = {"error": str(content)}  # type: ignore
+    def unauthorized(self, msg: str = "Unauthorized") -> JSONResponse:
 
-        return super().render(content, status_code=500)  # type: ignore
+        return JSONResponse(content={"error": msg}, status_code=401)
 
+    def server_error(self, msg: str = "Internal Server Error") -> JSONResponse:
 
-class ResponseValidationError(JSONResponse):
-
-    def render(self, content: ValidationError) -> bytes:
-        content = {"detail": content.errors()}  # type: ignore
-
-        return super().render(content, status_code=400)  # type: ignore
-
-
-class Response(Generic[T], JSONResponse):
-
-    def render(self, content: T) -> bytes:  # type: ignore
-
-        if is_dataclass(content):
-            content = asdict(content)  # type: ignore
-
-        elif isinstance(content, list):
-            content = [
-                (asdict(item) if is_dataclass(item) else item) for item in content  # type: ignore
-            ]
-
-        return super().render(content)
+        return JSONResponse(content={"error": msg}, status_code=500)
 
 
 class TimingMiddleware(BaseHTTPMiddleware):
     async def dispatch(
-        self, request: StarletteRequest, call_next: RequestResponseEndpoint
-    ) -> StarletteResponse:
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         start_time: float = time.time()
 
-        response: StarletteResponse = await call_next(request)
+        response: Response = await call_next(request)
 
         process_time: float = time.time() - start_time
 

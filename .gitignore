@@ -4,3 +4,4 @@ dist
 /src/onbbu.egg-info
 **__pycache__
 **.log
+**.mypy_cache

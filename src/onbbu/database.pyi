@@ -1,4 +1,4 @@
-from aerich import Command  # type: ignore
+from aerich import Command
 from onbbu.logger import LogLevel as LogLevel, logger as logger
 from tortoise import Model as Model
 from typing import Any
@@ -6,7 +6,7 @@ from typing import Any
 class DatabaseManager:
     database_url: str
     command: Command
-    models: list[type[Model]]
+    models: list[str]
     def __init__(self, database_url: str) -> None: ...
     def register_models(self, model: type[Model]) -> None: ...
     def get_config(self) -> dict[str, Any]: ...
