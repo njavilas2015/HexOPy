@@ -1,4 +1,4 @@
-from aerich import Command
+from aerich import Command # type: ignore
 from onbbu.logger import LogLevel as LogLevel, logger as logger
 from tortoise import Model as Model
 from typing import Any
