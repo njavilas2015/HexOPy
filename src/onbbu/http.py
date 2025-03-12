@@ -8,7 +8,7 @@ from os import getenv
 
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse, Response
-from starlette.requests import Request
+from starlette.requests import Request as RequestStarlette
 from starlette.routing import Route
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
@@ -21,6 +21,10 @@ from pydantic import ValidationError
 from onbbu.logger import LogLevel, logger
 
 T = TypeVar("T")
+
+
+class Request(RequestStarlette):
+    pass
 
 
 class ResponseHttp:
@@ -52,7 +56,7 @@ class ResponseHttp:
 
 class TimingMiddleware(BaseHTTPMiddleware):
     async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
+        self, request: RequestStarlette, call_next: RequestResponseEndpoint
     ) -> Response:
         start_time: float = time.time()
 

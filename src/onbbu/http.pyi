@@ -5,12 +5,14 @@ from onbbu.logger import LogLevel as LogLevel, logger as logger
 from pydantic import ValidationError as ValidationError
 from starlette.applications import Starlette
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint as RequestResponseEndpoint
-from starlette.requests import Request
+from starlette.requests import Request as RequestStarlette
 from starlette.responses import JSONResponse, Response as Response
 from starlette.routing import Route
 from typing import Any, Awaitable, Callable, TypeVar
 
 T = TypeVar('T')
+
+class Request(RequestStarlette): ...
 
 class ResponseHttp:
     def json(self, content: Any, status_code: int) -> JSONResponse: ...
@@ -21,7 +23,7 @@ class ResponseHttp:
     def server_error(self, msg: str = 'Internal Server Error') -> JSONResponse: ...
 
 class TimingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response: ...
+    async def dispatch(self, request: RequestStarlette, call_next: RequestResponseEndpoint) -> Response: ...
 
 class HTTPMethod(Enum):
     GET = 'GET'
