@@ -39,7 +39,10 @@ class ResponseHttp:
 
     def validate_error(self, content: ValidationError) -> JSONResponse:
 
-        return JSONResponse(content={"error": content.errors()}, status_code=400)
+        def format_errors_json(errors: ValidationError) -> dict[int | str, str]:
+            return {error["loc"][0]: error["msg"] for error in errors.errors()}
+
+        return JSONResponse(content=format_errors_json(content), status_code=400)
 
     def value_error(self, content: ValueError) -> JSONResponse:
 
